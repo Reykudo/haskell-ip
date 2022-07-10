@@ -777,6 +777,31 @@ instance Prim Mac where
           s1 -> go (ix# +# 1#) s1
         else s0
 
+#if MIN_VERSION_base(4,16,0)
+
+macToWord16A# :: Mac -> Word16#
+{-# inline macToWord16A# #-}
+macToWord16A# (Mac w) = case word64ToWord16 (unsafeShiftR w 32) of
+  W16# x -> x
+
+macToWord16B# :: Mac -> Word16#
+{-# inline macToWord16B# #-}
+macToWord16B# (Mac w) = case word64ToWord16 (unsafeShiftR w 16) of
+  W16# x -> x
+
+macToWord16C# :: Mac -> Word16#
+{-# inline macToWord16C# #-}
+macToWord16C# (Mac w) = case word64ToWord16 w of
+  W16# x -> x
+
+macFromWord16# :: Word16# -> Word16# -> Word16# -> Mac
+macFromWord16# a b c = Mac
+    $ (unsafeShiftL (word16ToWord64 (W16# a)) 32)
+  .|. (unsafeShiftL (word16ToWord64 (W16# b)) 16)
+  .|. (word16ToWord64 (W16# c))
+
+#else
+
 macToWord16A# :: Mac -> Word#
 {-# inline macToWord16A# #-}
 macToWord16A# (Mac w) = case word64ToWord16 (unsafeShiftR w 32) of
@@ -797,6 +822,8 @@ macFromWord16# a b c = Mac
     $ (unsafeShiftL (word16ToWord64 (Compat.W16# a)) 32)
   .|. (unsafeShiftL (word16ToWord64 (Compat.W16# b)) 16)
   .|. (word16ToWord64 (Compat.W16# c))
+
+#endif
 
 word16ToWord64 :: Word16 -> Word64
 word16ToWord64 = fromIntegral
